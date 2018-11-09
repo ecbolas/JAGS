@@ -1,0 +1,34 @@
+
+    model {
+    
+    #Priors:
+    
+    #RANDOM INTERCEPT PER POPULATION
+    #these means that alpha is calculated for every group
+    for (i in 1:ngroups){
+    alpha[i] ~ dnorm(mu.int, tau.int) #intercept
+    } #this says that alpha is a paramter that follows a normal distribution with mu.int is       mean and tau.int is the variance
+    
+    #these two are the priors for alpha
+    mu.int ~ dnorm(0, 0.001) # Mean hyperparameter for random intercept
+    tau.int <- 1 / (sigma.int * sigma.int) #variance for random intercept, can't use sigma2       (variance) directly, you have to calculate tau from sigma
+    sigma.int ~ dunif(0, 100) # SD hyperparameter for random intercept
+    
+    #COMMON SLOPE FOR ALL POPULATIONS, we know this so it is a prior
+    beta ~ dnorm(0, 0.001) # Common slope
+    
+    #PRIORS FOR THE DATA (y)
+    tau <- 1 / ( sigma * sigma) # Residual precision. can't use sigma2 (variance) directly,       you have to calculate tau from sigma
+    sigma ~ dunif(0, 100) # Residual standard deviation
+    
+
+
+    #LIKELIHOOD
+ 
+    
+    for (i in 1:n) {
+    mass[i] ~ dnorm(mu[i], tau) # The random variable
+    mu[i] <- alpha[pop[i]] + beta* length[i] # Expectation
+    }
+    }
+    

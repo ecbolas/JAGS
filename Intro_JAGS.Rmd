@@ -1,0 +1,87 @@
+---
+title: "Intro_JAGS"
+output: html_notebook
+---
+
+JAGS user manual: http://people.stat.sc.edu/hansont/stat740/jags_user_manual.pdf
+
+http://www.johnmyleswhite.com/notebook/2010/08/20/using-jags-in-r-with-the-rjags-package/
+
+https://www.r-bloggers.com/getting-started-with-jags-rjags-and-bayesian-modelling/
+
+```{r}
+library(rjags)
+```
+
+
+First: Basic Linear Model in both frequentist and Bayesian framework
+Data: Counting wallcreepers in quadrats for many years in Switzerland (starting 1989 -2006 (16 years))
+Formula:
+
+y = a + b*x + eps
+eps ~ Normal (0, sigma2)
+
+
+Frequentist with simulated data with paramters we know.
+
+```{r}
+set.seed(432104) #makes sure we get the same starting number and sequence in the random number generator each time
+
+n <- 16 #  number of years
+a <- 40 #intercept for number of wall creepers to start, we are making this up
+b <- -1.5 #slope, also made of of how many wallcreepers decrease each year
+sigma2 <- 25 #residual variance, how much the number for each year varies
+x <- 1:16 #values for the year covariate
+eps <- rnorm(n, mean = 0, sd = sqrt(sigma2)) #error term, this is random. reads: rnorm, normal distribution for the years with a mean of 0 
+
+y <- a + b*x + eps # Assemble data set
+plot((x+1989), y, xlab= "Year", las= 1, ylab= "Prop. occupied (%)", cex= 1.2) #las makes circules instead of dots, cex is the size of the circles
+
+print(summary(lm(y ~ I(x+1989)))) # "I" doesn't really matter here, just a scaling parameter that somehow turns the data into a useable format
+
+abline(lm(y~ I(x+1989)), col = "blue", lwd = 2)
+
+
+```
+
+Bayesian
+```{r}
+#define the model 
+#name the model model.string, then define everything, has to start with "model"
+model.string <-"
+model {
+  #Priors (there are really weak, give really low precision at mean = 0)
+  alpha ~ dnorm(0,0.001) #dnorm means normal distribution, mean = 0, the second number is tau (1/variance) which gives you precision. Remind yourself that in r, dnorm(mean, sd). In JAGS, dnorm(mean, tau)
+  beta ~ dnorm(0,0.001)
+  sigma ~ dunif(0,100) #uniform distribution, (0-100)
+  # Likelihood
+  for (i in 1:n) {
+    y[i] ~ dnorm(mu[i], tau)
+    mu[i] <- alpha + beta*x[i]
+  }
+  
+  # Derived quantities
+  tau <- 1/ (sigma * sigma)
+  p.decline <- 1-step(beta) # Probability of decline
+  
+  # Assess model fit using a sums-of-squares-type discrepancy
+  for (i in 1:n) {
+    residual[i] <- y[i]-mu[i] # Residuals for observed data
+    predicted[i] <- mu[i] # Predicted values
+    sq[i] <- pow(residual[i], 2) # Squared residuals for observed data
+    
+    # Generate replicate data and compute fit stats for them
+    y.new[i] ~ dnorm(mu[i], tau) # one new data set at each MCMC iteration
+    sq.new[i] <- pow(y.new[i]-predicted[i], 2) # Squared residuals for new data
+  }
+  fit <- sum(sq[]) # Sum of squared residuals for actual data set
+  fit.new <- sum(sq.new[]) # Sum of squared residuals for new data set
+  test <- step(fit.new - fit) # Test whether new data set more extreme
+  bpvalue <- mean(test) # Bayesian p-value
+}
+"
+
+
+
+
+```
