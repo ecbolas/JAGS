@@ -1,0 +1,55 @@
+---
+title: "Bayesian_Project"
+author: "Ellie Bolas"
+date: "November 28, 2018"
+output: html_document
+---
+*Assignment* 
+(10 min talk):
+1. An ecological problem or question setting the context. This can be your own project, or something from a paper, or even something you made up. The problem has to lend itself to analysis with a hierarchical model, i.e., not a simple regression. 
+
+2. A sampling design suitable to addressing the problem or question (and allowing construction of a hierarchical model)
+
+3. The corresponding Bayesian network/acyclical graph
+
+4. All probability distributions (likelihood and priors) that make up the full posterior - with justifications for choice of distributions
+
+5. IF you are recreating or inventing an ecological problem, you'll need to simulate data under the model developed in 3/4
+
+6. Data analysis in JAGS or similar
+
+7. Summary results (including assessment of convergence, possibly model fit or model choice, depending on your specific analysis)
+
+8. Brief discussion relating your results back to your ecological question
+
+########################################################################################
+
+*Questions*
+What is the probability detecion of skunks? Does habitat influence probability detection of skunks? Does habitat influence probability of occurence of skunks?
+
+####################################################################################
+*Zero-Inflated Poisson*
+-Need to use a ZIP b/c there are so many zeros in the data, we lose what influences detection probaility. (In occupancy, we can get that z = 1 so p>0, but with data with lots of zeros, we can't get at what influences p)
+
+-there are two processes at work—one that determines if the (site) is even eligible for a non-zero response (z), and the other that determines the count of that response for eligible (sites) (lamda).
+
+-The ZIP model fits, simultaneously, two separate regression models.  One is a logistic or probit model that models the probability of (a site) being eligible for a non-zero count.  The other models the size of that count.
+
+-the co-variate on "occurence" will actually be a relationships of the higher this cov, the less likely the site is occupied
+
+*Data Structure*
+-issue: I am doing repeat surveys at a single site. In a normal regression-style ZIP, z will be calculated for each occasion. I want one z across all occasions.
+
+*Solution: Bayesian style*
+1. Gives us z across all occaisions 
+2. In a likelihood situation (normal stats, for a normal regression), the distribution of parameters is learned from the data. That means that in data with lots of zeros, the distribution is scewed. The bonus of Bayesian is that we get to set the distribution of the parameters and therefor not be pulled toward zero.
+
+#######################################################################################
+*Data*
+Skunk counts from SRI
+30 sites
+185 occasions (occasion=1 camera day)
+site covariates: whether there is shrub (1) or grass (0)
+
+Not using an informed prior because it is complicated to transform it
+Yjk~poisson(lambda) #use poisson bc counts are bounded by time (vs binomial where counts are bounded by a top number)
