@@ -14,6 +14,8 @@ setwd("...")
 skunk.det <- as.matrix(read.csv("SR_Skunk_dets.csv")) #skunk dets from 30 sites and 185 occasions
 shrub <-c(as.matrix(read.csv("SR_site_covs.csv"))) #whether each site has shrub (1) or grass (0) add c on the front so that it's a string, not a df
 
+set.seed(432104)
+
 ###############################
 #specify data
 n.site = nrow(skunk.det) #30
@@ -56,11 +58,11 @@ log(lambda[j,k]) = a0+a1 * shrub[j]
     # Derived quantities
 #these are not key components in the model, but we could be interested in this
 
-psi.shrub <- b0 + b1
-psi.noshrub <- b0
+psi.shrub <- exp(b0 + b1)/(exp(b0 + b1) +1)
+psi.noshrub <- exp(b0)/(exp(b0) +1)
 
-lambda.shrub <- a0+a1
-lambda.noshrub <- a0
+lambda.shrub <- exp(a0+a1)
+lambda.noshrub <- exp(a0)
 
 	}"
 
@@ -111,22 +113,10 @@ summary(chains)
 #second part tells you the quantiles (desribes what the histogram looks like)
 
 ## Trace plots (see book p.173)
-traceplot(chains[[1]]) #this looks terrible, probably because our priors started out so weak (b0 ~ dnorm(0,.001)) 
+traceplot(chains[[1]]) #we want it to look like a fuzzy catepillar with no wiggles
 
 #alternative way to plot it
 plot(1:ni,chains[[1]][,"a0"], type ="l" )
 
-##Last step: backtransform the means so that we know our answer
-
-#lambda.noshrub
-exp(-4.77161) #0.008466738
-
-#lambda.shrub
-exp(-4.02417) #0.01787826
-
-#psi.noshrub 
-exp(-0.23865)/(exp(-0.23865)+1) #0.4406191
-
-#psi.shrub      
-exp(-0.06895)/(exp(-0.06895)+1) #0.4827693
+plot(1:ni, chains[[1]][,"psi.noshrub"], type = "l")
 
